@@ -11,8 +11,7 @@ use rmk::event::ControllerEvent;
 use rmk::macros::rmk_keyboard;
 
 const NUM_LEDS: usize = 11;
-const NUM_UNIQUE: usize = (NUM_LEDS + 1) / 2;
-const PULSE_COUNT: usize = NUM_LEDS * 24 + 1;
+const PULSE_COUNT: usize = NUM_LEDS * 24 + 2;
 
 /// Gamma 2.8 correction table (standard Adafruit/FastLED table)
 const GAMMA8: [u8; 256] = [
@@ -69,19 +68,18 @@ fn gamma_correct(c: RGB8) -> RGB8 {
     }
 }
 
-/// Builds a mirrored gradient: physical layout 1 2 3 4 5 | 5 4 3 2 1
-/// Each layer rotates the starting hue by ~60° (256/6 ≈ 43)
+/// Builds a mirrored gradient: physical layout 1 2 3 4 5 6 5 4 3 2 1
 fn layer_gradient(layer: u8) -> [RGB8; NUM_LEDS] {
     let base_hue: u8 = layer.wrapping_mul(43);
-    const HUE_STEP: u8 = 8;
+    const HUE_STEP: u8 = 15; // Moderate step for distinct colors
 
     let mut colors = [RGB8 { r: 0, g: 0, b: 0 }; NUM_LEDS];
 
-    for i in 0..NUM_UNIQUE {
-        let hue = base_hue.wrapping_add(i as u8 * HUE_STEP);
-        let color = gamma_correct(hsv_to_rgb(hue, 220, 180));
-        colors[i] = color;                    // left half
-        colors[NUM_LEDS - 1 - i] = color;    // mirrored right half
+    for i in 0..NUM_LEDS {
+        // Mirrored index for 11 LEDs: 0 1 2 3 4 5 4 3 2 1 0
+        let dist = if i < 6 { i } else { 10 - i };
+        let hue = base_hue.wrapping_add(dist as u8 * HUE_STEP);
+        colors[i] = gamma_correct(hsv_to_rgb(hue, 220, 180));
     }
     colors
 }
@@ -102,16 +100,21 @@ impl<'ch> Ws2812LayerController<'ch> {
     }
 
     fn encode_ws2812_in_place(&mut self, colors: &[RGB8; NUM_LEDS]) {
+        // Add a leading dummy pulse to stabilize the line for the first LED
+        self.pulse_buffer[0] = PulseCode::new(Level::Low, 10, Level::Low, 10);
+
         for (led, color) in colors.iter().enumerate() {
             let bits = ((color.g as u32) << 16) | ((color.r as u32) << 8) | (color.b as u32);
             for bit in 0..24 {
-                self.pulse_buffer[led * 24 + bit] = if (bits >> (23 - bit)) & 1 == 1 {
+                self.pulse_buffer[1 + led * 24 + bit] = if (bits >> (23 - bit)) & 1 == 1 {
                     PulseCode::new(Level::High, 64, Level::Low, 36)
                 } else {
                     PulseCode::new(Level::High, 32, Level::Low, 68)
                 };
             }
         }
+        // Ensure the last entry is an end marker
+        self.pulse_buffer[PULSE_COUNT - 1] = PulseCode::end_marker();
     }
 }
 
@@ -121,11 +124,7 @@ impl<'ch> Controller for Ws2812LayerController<'ch> {
     async fn process_event(&mut self, event: Self::Event) {
         if let ControllerEvent::Layer(layer) = event {
             let colors = layer_gradient(layer as u8);
-
-            // Encode directly into our struct's memory
             self.encode_ws2812_in_place(&colors);
-
-            // 3. Non-blocking Async transmission! This yields back to the executor.
             self.channel.transmit(&self.pulse_buffer).await.unwrap();
         }
     }
@@ -145,11 +144,11 @@ mod keyboard {
 
             let rmt = Rmt::new(p.RMT, Rate::from_mhz(80)).unwrap().into_async();
 
-            // 2. Because `rmt` is now async, `configure_tx` returns an Async channel
             let async_channel = rmt.channel0.configure_tx(
                 p.GPIO33,
                 TxChannelConfig::default()
                     .with_clk_divider(1)
+                    .with_memsize(4)
                     .with_idle_output_level(Level::Low)
                     .with_idle_output(true)
                     .with_carrier_modulation(false),
