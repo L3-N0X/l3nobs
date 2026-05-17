@@ -11,7 +11,7 @@ use rmk::event::ControllerEvent;
 use rmk::macros::rmk_keyboard;
 
 const NUM_LEDS: usize = 11;
-const PULSE_COUNT: usize = NUM_LEDS * 24 + 2;
+const PULSE_COUNT: usize = NUM_LEDS * 24 + 1;
 
 /// Gamma 2.8 correction table (standard Adafruit/FastLED table)
 const GAMMA8: [u8; 256] = [
@@ -100,20 +100,19 @@ impl<'ch> Ws2812LayerController<'ch> {
     }
 
     fn encode_ws2812_in_place(&mut self, colors: &[RGB8; NUM_LEDS]) {
-        // Add a leading dummy pulse to stabilize the line for the first LED
-        self.pulse_buffer[0] = PulseCode::new(Level::Low, 10, Level::Low, 10);
-
         for (led, color) in colors.iter().enumerate() {
             let bits = ((color.g as u32) << 16) | ((color.r as u32) << 8) | (color.b as u32);
             for bit in 0..24 {
-                self.pulse_buffer[1 + led * 24 + bit] = if (bits >> (23 - bit)) & 1 == 1 {
-                    PulseCode::new(Level::High, 64, Level::Low, 36)
+                // Using clk_divider(2) @ 80MHz = 40MHz (25ns per tick)
+                // 1 bit: 0.7µs High (28 ticks), 0.55µs Low (22 ticks) -> 1.25µs total
+                // 0 bit: 0.35µs High (14 ticks), 0.9µs Low (36 ticks) -> 1.25µs total
+                self.pulse_buffer[led * 24 + bit] = if (bits >> (23 - bit)) & 1 == 1 {
+                    PulseCode::new(Level::High, 28, Level::Low, 22)
                 } else {
-                    PulseCode::new(Level::High, 32, Level::Low, 68)
+                    PulseCode::new(Level::High, 14, Level::Low, 36)
                 };
             }
         }
-        // Ensure the last entry is an end marker
         self.pulse_buffer[PULSE_COUNT - 1] = PulseCode::end_marker();
     }
 }
@@ -144,10 +143,12 @@ mod keyboard {
 
             let rmt = Rmt::new(p.RMT, Rate::from_mhz(80)).unwrap().into_async();
 
+            // Using clk_divider(2) for 40MHz (25ns ticks)
+            // with_memsize(4) to prevent wrapping for 11 LEDs
             let async_channel = rmt.channel0.configure_tx(
                 p.GPIO33,
                 TxChannelConfig::default()
-                    .with_clk_divider(1)
+                    .with_clk_divider(2)
                     .with_memsize(4)
                     .with_idle_output_level(Level::Low)
                     .with_idle_output(true)
