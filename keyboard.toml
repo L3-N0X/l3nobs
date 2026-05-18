@@ -29,9 +29,8 @@ matrix_map = """
 [[input_device.encoder]]
 pin_a = "GPIO16"
 pin_b = "GPIO17"
-phase = "e8h7"
+phase = "resolution"
 resolution = 2
-internal_pullup = true
 
 [aliases]
 cut = "WM(X, LCtrl)"
@@ -44,51 +43,51 @@ encoders = [["AudioVolUp", "AudioVolDown"]]
 keys = """
 AudioMute   MediaPlayPause  TO(base)
 MediaPrevTrack MediaRewind MediaFastForward MediaNextTrack
-TO(action) TO(mouse) TO(layer3) TO(layer4)
+TO(layer1) TO(layer2) TO(layer3) TO(layer4)
 ControlPanel Calculator
 """
 
 
 [[layer]]  # Layer 1
-name = "action"
+name = "layer1"
 encoders = [["BrightnessUp", "BrightnessDown"]]
 keys="""
-F13 F14 TO(base)
-F15 F16 F17 F18
-F19 F20 F21 F22
-F23 F24
+_ _ TO(base)
+_ _ _ _
+_ _ _ _
+_ _
 """
 
 
 [[layer]]  # Layer 2
-name = "mouse"
+name = "layer2"
 encoders = [["MouseWheelUp", "MouseWheelDown"]]
 keys = """
-MouseBtn1   MouseBtn2   TO(base)
-MouseWheelLeft MouseWheelUp MouseWheelDown MouseWheelRight
-MouseBtn3 MouseBtn4 MouseBtn5 MouseBtn6
-MouseBtn7 MouseBtn8
+_ _ TO(base)
+_ _ _ _
+_ _ _ _
+_ _
 """
 
 
 [[layer]]  # Layer 3
 name = "layer3"
-encoders = [["MouseWheelRight", "MouseWheelLeft"]]
+encoders = [["_", "_"]]
 keys="""
-F13 F14 TO(base)
-F15 F16 F17 F18
-F19 F20 F21 F22
-F23 F24
+_ _ TO(base)
+_ _ _ _
+_ _ _ _
+_ _
 """
 
 [[layer]]  # Layer 4
 name = "layer4"
-encoders = [["BrightnessDown", "BrightnessUp"]]
+encoders = [["_", "_"]]
 keys="""
-F13 F14 TO(base)
-F15 F16 F17 F18
-F19 F20 F21 F22
-F23 F24
+_ _ TO(base)
+_ _ _ _
+_ _ _ _
+_ _
 """
 
 [ble]

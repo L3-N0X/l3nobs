@@ -1,6 +1,6 @@
 # L3NOBS Macro Keyboard
 
-L3NOBS is a custom macro keyboard powered by an ESP32-S3, featuring a unique 13-key layout, a rotary encoder, and an 11-LED WS2812 strip with dynamic, layer-aware mirrored gradient lighting.
+L3NOBS is a custom macro keyboard powered by an ESP32-S3, featuring a unique 13-key layout, a rotary encoder, and an 11-LED WS2812 strip with dynamic, layer-aware mirrored gradient lighting. It uses RMK under the hood for most keyboard functionality and configuration.
 
 ## Hardware Specifications
 
@@ -15,37 +15,11 @@ L3NOBS is a custom macro keyboard powered by an ESP32-S3, featuring a unique 13-
 The physical layout follows a 4x4 grid but utilizes 13 keys mapped as follows:
 
 ```
-(0,1) (0,2) (0,3)
+      (0,1) (0,2) (0,3)
 (1,0) (1,1) (1,2) (1,3)
 (2,0) (2,1) (2,2) (2,3)
       (3,1) (3,2)
 ```
-
-## Layers
-
-L3NOBS features 5 layers, each with a distinct purpose and a corresponding RGB color theme.
-
-### Layer 0: Base (Multimeda)
-- **Keys:** Mute, Play/Pause, Previous/Next Track, Rewind/Fast Forward.
-- **Navigation:** Quick access to all other layers.
-- **Shortcuts:** Control Panel, Calculator.
-- **Encoder:** System Volume Control.
-
-### Layer 1: Action (F-Keys)
-- **Keys:** Mapped to F13 through F24 for custom macros.
-- **Encoder:** Screen Brightness Control.
-
-### Layer 2: Mouse
-- **Keys:** Full mouse control (8 buttons) and 4-way scroll wheel emulation.
-- **Encoder:** Mouse Wheel (Vertical).
-
-### Layer 3: Layer 3
-- **Keys:** Mapped to F13 through F24.
-- **Encoder:** Mouse Wheel (Horizontal).
-
-### Layer 4: Layer 4
-- **Keys:** Mapped to F13 through F24.
-- **Encoder:** Inverted Brightness Control.
 
 ## RGB Gradient Lighting
 
