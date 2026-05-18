@@ -90,9 +90,6 @@ _ _ _ _
 _ _
 """
 
-[ble]
-enabled = true
-
 [storage]
 enabled = true
 start_addr = 0x3f0000
